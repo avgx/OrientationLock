@@ -2,6 +2,8 @@
 
 SPM library for controlling iOS app orientation: portrait by default, forced landscape on button tap (like YouTube / VK Video).
 
+https://github.com/user-attachments/assets/1b507841-7ddc-4851-a4b5-aeae51ed0b93
+
 ## Policy vs Action
 
 The library separates two independent operations:
