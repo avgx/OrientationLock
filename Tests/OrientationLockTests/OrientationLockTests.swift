@@ -6,29 +6,14 @@ import UIKit
 @Test func defaultAllowedOrientationsIsPortrait() async throws {
     await MainActor.run {
         #expect(OrientationLock.shared.allowedOrientations == .portrait)
-    }
-}
-
-@Test func preferredLandscapeFromPortrait() async throws {
-    await MainActor.run {
-        let result = OrientationLock.preferredLandscape(current: .portrait)
-        #expect(result == .landscapeLeft)
-    }
-}
-
-@Test func preferredLandscapeTogglesLeftAndRight() async throws {
-    await MainActor.run {
-        #expect(OrientationLock.preferredLandscape(current: .landscapeLeft) == .landscapeRight)
-        #expect(OrientationLock.preferredLandscape(current: .landscapeRight) == .landscapeLeft)
+        #expect(OrientationLock.shared.isLandscape == false)
     }
 }
 
 @Test func maskForOrientation() async throws {
-    await MainActor.run {
-        #expect(OrientationLock.mask(for: .portrait) == .portrait)
-        #expect(OrientationLock.mask(for: .landscapeLeft) == .landscapeLeft)
-        #expect(OrientationLock.mask(for: .landscapeRight) == .landscapeRight)
-        #expect(OrientationLock.mask(for: .portraitUpsideDown) == .portraitUpsideDown)
-    }
+    #expect(OrientationLock.mask(for: .portrait) == .portrait)
+    #expect(OrientationLock.mask(for: .landscapeLeft) == .landscapeLeft)
+    #expect(OrientationLock.mask(for: .landscapeRight) == .landscapeRight)
+    #expect(OrientationLock.mask(for: .portraitUpsideDown) == .portraitUpsideDown)
 }
 #endif

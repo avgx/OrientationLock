@@ -13,11 +13,11 @@ The library separates two independent operations:
 | **Rotates the screen?** | No | Yes |
 
 ```swift
-// Camera screen opens — landscape is allowed, phone held vertically → nothing happens
-CameraView().allowedOrientations(.landscape)
+// Camera screen opens — landscape left is allowed, phone held vertically → nothing happens
+CameraView().allowedOrientations(.landscapeLeft)
 
-// User taps Fullscreen → screen rotates
-OrientationLock.shared.enterFullscreen()
+// User taps the landscape button → screen rotates
+LandscapeToggleButton()
 ```
 
 ## Why AppDelegate is required
@@ -53,28 +53,36 @@ Default allowed orientations is `.portrait` — no extra setup needed.
 
 ```swift
 CameraView()
-    .allowedOrientations(.landscape)
+    .allowedOrientations(.landscapeLeft)
+    .resetsLandscapeOnDisappear()
 
-Button("Fullscreen") {
-    OrientationLock.shared.enterFullscreen()
+.toolbar {
+    ToolbarItem(placement: .primaryAction) {
+        LandscapeToggleButton()
+    }
 }
+```
 
-Button("Exit") {
-    OrientationLock.shared.exitFullscreen()
-}
+Or programmatically:
+
+```swift
+OrientationLock.shared.enterLandscape()
+OrientationLock.shared.exitLandscape()
 ```
 
 ### 4. Advanced API
 
 ```swift
-OrientationLock.shared.allow(.landscape)     // policy only
-OrientationLock.shared.force(.landscapeLeft) // policy + rotate
+OrientationLock.shared.allow(.landscapeLeft)  // policy only
+OrientationLock.shared.force(.landscapeLeft)  // policy + rotate
 OrientationLock.shared.forceLandscape()
 ```
 
 ## System rotation lock
 
-When the user has rotation locked in Control Center, `force` uses `requestGeometryUpdate` with a `UIDevice.setValue` fallback — the same approach used by video players.
+On iOS 16+, rotation uses `requestGeometryUpdate` only (no `UIDevice.setValue`). If the user has rotation locked in Control Center, forced rotation may not work.
+
+On iOS 15, `force` falls back to `UIDevice.setValue`.
 
 ## iPad
 

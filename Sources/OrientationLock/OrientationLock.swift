@@ -1,4 +1,5 @@
 #if canImport(UIKit) && !os(tvOS) && !os(watchOS)
+import Combine
 import UIKit
 
 /// Controls allowed interface orientations and forces rotation at runtime.
@@ -6,10 +7,11 @@ import UIKit
 /// - ``allow(_:)`` sets policy (which orientations are permitted) without rotating.
 /// - ``force(_:)`` sets policy and rotates immediately.
 @MainActor
-public final class OrientationLock {
+public final class OrientationLock: ObservableObject {
     public static let shared = OrientationLock()
 
     public private(set) var allowedOrientations: UIInterfaceOrientationMask = .portrait
+    @Published public private(set) var isLandscape = false
 
     private init() {}
 
@@ -31,23 +33,34 @@ public final class OrientationLock {
         rotate(to: orientation)
     }
 
-    /// Forces rotation to a landscape orientation.
+    /// Allows landscape left and rotates immediately.
     public func forceLandscape() {
-        force(Self.preferredLandscape(current: currentInterfaceOrientation))
+        enterLandscape()
     }
 
     // MARK: - Scenario
 
-    /// Allows landscape and rotates into fullscreen landscape (e.g. video/camera expand).
-    public func enterFullscreen() {
+    /// Allows landscape left and rotates into landscape (e.g. video/camera expand).
+    public func enterLandscape() {
+        isLandscape = true
         allow(.landscapeLeft)
-        force(Self.preferredLandscape(current: currentInterfaceOrientation))
+        rotate(to: .landscapeLeft)
     }
 
     /// Returns to portrait-only policy and rotates back to portrait.
-    public func exitFullscreen() {
+    public func exitLandscape() {
+        isLandscape = false
         allow(.portrait)
-        force(.portrait)
+        rotate(to: .portrait)
+    }
+
+    /// Toggles between landscape left and portrait.
+    public func toggleLandscape() {
+        if isLandscape {
+            exitLandscape()
+        } else {
+            enterLandscape()
+        }
     }
 
     // MARK: - Rotation
@@ -55,17 +68,15 @@ public final class OrientationLock {
     private func rotate(to orientation: UIInterfaceOrientation) {
         if #available(iOS 16.0, *) {
             activeRootViewController()?.setNeedsUpdateOfSupportedInterfaceOrientations()
-            
+
             if let scene = activeWindowScene() {
                 let preferences = UIWindowScene.GeometryPreferences.iOS(
                     interfaceOrientations: Self.mask(for: orientation)
                 )
-                scene.requestGeometryUpdate(preferences) { [weak self] _ in
-                    Task { @MainActor in
-                        self?.legacyForce(orientation)
-                    }
-                }
+                scene.requestGeometryUpdate(preferences) { _ in }
             }
+
+            UIViewController.attemptRotationToDeviceOrientation()
         } else {
             UIViewController.attemptRotationToDeviceOrientation()
             legacyForce(orientation)
@@ -92,18 +103,8 @@ public final class OrientationLock {
     public var currentInterfaceOrientation: UIInterfaceOrientation {
         activeWindowScene()?.interfaceOrientation ?? .portrait
     }
-    
-    // MARK: - Testable helpers
 
-    internal nonisolated static func preferredLandscape(
-        current: UIInterfaceOrientation
-    ) -> UIInterfaceOrientation {
-        switch current {
-        case .landscapeLeft: .landscapeRight
-        case .landscapeRight: .landscapeLeft
-        default: .landscapeLeft
-        }
-    }
+    // MARK: - Testable helpers
 
     internal nonisolated static func mask(for orientation: UIInterfaceOrientation) -> UIInterfaceOrientationMask {
         switch orientation {

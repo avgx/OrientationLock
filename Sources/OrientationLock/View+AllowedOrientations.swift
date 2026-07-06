@@ -7,6 +7,15 @@ extension View {
     public func allowedOrientations(_ mask: UIInterfaceOrientationMask) -> some View {
         modifier(AllowedOrientationsModifier(mask: mask))
     }
+
+    /// Exits landscape when this view disappears, if landscape mode is active.
+    public func resetsLandscapeOnDisappear() -> some View {
+        onDisappear {
+            if OrientationLock.shared.isLandscape {
+                OrientationLock.shared.exitLandscape()
+            }
+        }
+    }
 }
 
 private struct AllowedOrientationsModifier: ViewModifier {
@@ -18,7 +27,10 @@ private struct AllowedOrientationsModifier: ViewModifier {
                 OrientationLock.shared.allow(mask)
             }
             .onDisappear {
-                if OrientationLock.shared.allowedOrientations == mask {
+                guard OrientationLock.shared.allowedOrientations == mask else { return }
+                if OrientationLock.shared.isLandscape {
+                    OrientationLock.shared.exitLandscape()
+                } else {
                     OrientationLock.shared.allow(.portrait)
                 }
             }
